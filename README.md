@@ -1,10 +1,11 @@
+🚨 This project is currently under heavy refactoring.
+
+
 # PlebChat documentation
 
 Welcome to PlebChat's documentation! 👋🏻
 
 This project is an open-source, solution for a self-hosted "agentic" AI application.
-
-🚨 This project is currently under heavy refactoring.
 
 
 ## Architecture / System Diagram
@@ -28,7 +29,7 @@ graph TD
 
 ## Open WebUI
 
-See [website](https://openwebui.com), [repository](https://github.com/open-webui/open-webui) and [documentation](https://docs.openwebui.com) and [Setup instructions](./setup_oi.md)
+See [website](https://openwebui.com), [repository](https://github.com/open-webui/open-webui), [documentation](https://docs.openwebui.com) and [Setup instructions](./setup_oi.md)
 
 This is an open-source repository used as the "frontend."
 
