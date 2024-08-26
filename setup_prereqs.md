@@ -6,8 +6,12 @@ See [website](https://ollama.com).
 
 ## Docker
 
-See [setup instructions](./setup_docker.md)
+...
 
 ## Homebrew
 
 ...
+
+## Cloudflare Tunnel
+
+This application serves as a reverse proxy in order to gives access to the Service behind NAT.

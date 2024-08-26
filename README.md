@@ -1,9 +1,8 @@
 🚨 This project is currently under heavy refactoring.
 
+# PlebChat
 
-# PlebChat documentation
-
-Welcome to PlebChat's documentation! 👋🏻
+![PlebChat avatar](./static/plebchat.png)
 
 This project is an open-source, solution for a self-hosted "agentic" AI application.
 
@@ -58,10 +57,3 @@ This database tracks token balances and usage history of registered users.
 This includes a FastAPI server which communicates with a MongoDB database in replication mode.
 
 An admin panel written with Streamlit allows for local maintenance.
-
-## Cloudflare Tunnel
-
-See [setup instructions](./setup_cloudflare.md)
-
-This application serves as a reverse proxy in order to gives access to the Service behind NAT.
-
