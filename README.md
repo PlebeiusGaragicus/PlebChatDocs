@@ -51,7 +51,7 @@ This is our LangGraph agent.
 
 ## User database
 
-See [respository]() and [setup instructions](./setup_db)
+See [respository](https://github.com/PlebeiusGaragicus/PlebChatDB) and [setup instructions](./setup_db)
 
 This database tracks token balances and usage history of registered users.
 
