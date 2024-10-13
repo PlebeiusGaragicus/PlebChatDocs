@@ -1,4 +1,0 @@
-# Open WebUI pipeline setup
-
-...
-

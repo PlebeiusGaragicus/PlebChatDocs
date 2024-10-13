@@ -1,3 +1,0 @@
-# PlebChat user database setup
-
-...
