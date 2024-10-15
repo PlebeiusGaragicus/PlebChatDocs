@@ -1,28 +1,90 @@
-version: '3'
 services:
+
+### OPEN WEBUI ###
   open-webui:
     image: ghcr.io/open-webui/open-webui:main
+    container_name: open-webui-dev
     ports:
-      - "3000:8080"  # Expose the WebUI on port 3000 mapped to the app's default port 8080.
+      - "3000:8080"
     volumes:
-      - open-webui:/app/backend/data  # Volume for persistent data storage.
+      - open-webui:/app/backend/data
+
     environment:
-      ENABLE_MESSAGE_RATING: "false"  # Disable message rating feature.
-      WEBUI_NAME: "PlebChat"  # Set WebUI name to "PlebChat."
-      ENABLE_SIGNUP: "false"  # Disable user signup.
-      OLLAMA_BASE_URL: "http://localhost:11434"  # Set the Ollama API to the local instance.
+      GLOBAL_LOG_LEVEL: "DEBUG"
+      WEBUI_NAME: "PlebChat"
+      ENABLE_MESSAGE_RATING: "false"
+      # ENABLE_SIGNUP: "false"
+      # ENABLE_LOGIN_FORM
+
+      # Ollama settings
+      # OLLAMA_BASE_URL: "http://localhost:11434"
+      OLLAMA_BASE_URL: "http://host.docker.internal:11434"
+
+
+      # Limit access to localhost to force traffic via Cloudflare
+      # HOST: "127.0.0.1"
+
+
+      # one month
+      # JWT_EXPIRES_IN: "2592000"
+
+
+      # Trust Cloudflare headers for authentication
+      WEBUI_AUTH_TRUSTED_EMAIL_HEADER: "Cf-Access-Authenticated-User-Email"  # Entrust the email from Cloudflare
+      # Optionally, use this header to set a name for new users created automatically
+      WEBUI_AUTH_TRUSTED_NAME_HEADER: "Cf-Access-Authenticated-User-Name"
+
+      # WEBUI_SESSION_COOKIE_SECURE: "true"  # Forces cookies to be sent over secure HTTPS.
+      # WEBUI_SESSION_COOKIE_SAME_SITE: "lax"  # Ensures that cookies are securely passed.
+      # ENABLE_RAG_WEB_LOADER_SSL_VERIFICATION: "true"  # Make sure web certificates are validated.
+
+
     extra_hosts:
       - "host.docker.internal:host-gateway"  # Allow Open WebUI to reach the host machine.
-    restart: always
 
+    restart: unless-stopped
+
+
+
+### CLOUDFLARED ###
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    container_name: cloudflared_tunnel
+
+    environment:
+      TUNNEL_TOKEN: ${CLOUDFLARE_TUNNEL_TOKEN}
+
+    restart: unless-stopped
+
+    # command: tunnel run
+    command: tunnel --loglevel debug run
+    depends_on:
+      - open-webui  # Ensure Cloudflared waits for Open WebUI to be available before starting
+
+
+### WATCHTOWER ###
   watchtower:
-    image: containrrr/watchtower  # Watchtower image to monitor and update containers.
-    container_name: watchtower  # Give the Watchtower container a name.
+    image: containrrr/watchtower
+    container_name: watchtower
+
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock  # Grant Watchtower access to Docker.
-    command: --interval 600 open-webui  # Set the interval to check for updates every 300 seconds (5 minutes) and watch "open-webui" container only.
-    restart: always
 
+    environment:
+      - TZ=America/Los_Angeles  # Set the timezone to Pacific Time (PT)
+
+    command:
+      - --cleanup
+      - --schedule
+      - "0 0 1 * * *"   # Run once a month at midnight UTC
+      - open-webui
+
+    restart: unless-stopped
+    # restart: always
+
+
+
+### VOLUMES ###
 volumes:
   open-webui:
     driver: local  # Persisted volume to ensure data isn't lost.

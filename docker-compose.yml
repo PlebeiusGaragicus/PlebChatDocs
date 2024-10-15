@@ -1,0 +1,39 @@
+version: '3'
+services:
+
+
+  open-webui:
+    image: ghcr.io/open-webui/open-webui:main
+    ports:
+      - "3000:8080"
+    volumes:
+      - open-webui:/app/backend/data
+    environment:
+      WEBUI_NAME: "PlebChat"
+      ENABLE_MESSAGE_RATING: "false"
+      ENABLE_SIGNUP: "false"
+      # Ollama settings
+      OLLAMA_BASE_URL: "http://localhost:11434"
+
+    extra_hosts:
+      - "host.docker.internal:host-gateway"  # Allow Open WebUI to reach the host machine.
+
+    restart: always # THIS
+
+
+
+  watchtower:
+    image: containrrr/watchtower  # Watchtower image to monitor and update containers.
+    container_name: watchtower  # Give the Watchtower container a name.
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock  # Grant Watchtower access to Docker.
+    command: --interval 600 open-webui  # Set the interval to check for updates every 300 seconds (5 minutes) and watch "open-webui" container only.
+    restart: always
+
+
+
+
+
+volumes:
+  open-webui:
+    driver: local  # Persisted volume to ensure data isn't lost.
