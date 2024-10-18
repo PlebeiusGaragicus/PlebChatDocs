@@ -1,39 +1,108 @@
-version: '3'
 services:
 
-
+##################### OPEN WEBUI #####################
   open-webui:
     image: ghcr.io/open-webui/open-webui:main
+    container_name: open-webui-dev
     ports:
       - "3000:8080"
     volumes:
       - open-webui:/app/backend/data
+
     environment:
+      GLOBAL_LOG_LEVEL: "DEBUG"
       WEBUI_NAME: "PlebChat"
       ENABLE_MESSAGE_RATING: "false"
+
       ENABLE_SIGNUP: "false"
+      ENABLE_LOGIN_FORM: "false"
+
       # Ollama settings
-      OLLAMA_BASE_URL: "http://localhost:11434"
+      # OLLAMA_BASE_URL: "http://localhost:11434"
+      OLLAMA_BASE_URL: "http://host.docker.internal:11434"
+
+
+      # Limit access to localhost to force traffic via Cloudflare
+      HOST: "127.0.0.1" # Uncomment to force traffic via Cloudflare and prevent local access
+
+
+      # Trust Cloudflare headers for authentication
+      WEBUI_AUTH_TRUSTED_EMAIL_HEADER: "Cf-Access-Authenticated-User-Email"  # Entrust the email from Cloudflare
+      # Optionally, use this header to set a name for new users created automatically
+      WEBUI_AUTH_TRUSTED_NAME_HEADER: "Cf-Access-Authenticated-User-Name"
+
+      # WEBUI_SESSION_COOKIE_SECURE: "true"  # Forces cookies to be sent over secure HTTPS.
+      # WEBUI_SESSION_COOKIE_SAME_SITE: "lax"  # Ensures that cookies are securely passed.
+      # ENABLE_RAG_WEB_LOADER_SSL_VERIFICATION: "true"  # Make sure web certificates are validated.
+
+      TITLE_GENERATION_PROMPT_TEMPLATE: |
+        User query:
+        {{prompt:middletruncate:6000}}
+
+        Task:
+        Create a concise, 3-5 word title/summary for the user query above.
+
+        Requirements:
+        - The title should provide an at-a-glance idea of the generic topic / goal of the user's query
+        - Provide a single answer, not a list of possible answers
+        - Do not provide any other text
+        - Provide ONLY the 3-5 word title suggestion
+        - Your reply should be NO MORE than 5 words
+
+        Examples:
+        Stock Market Trends
+        Perfect Chocolate Chip Recipe
+        Evolution of Music Streaming
+        Remote Work Productivity Tips
+        Artificial Intelligence in Healthcare
+        Video Game Development Insights
 
     extra_hosts:
       - "host.docker.internal:host-gateway"  # Allow Open WebUI to reach the host machine.
 
-    restart: always # THIS
-
-
-
-  watchtower:
-    image: containrrr/watchtower  # Watchtower image to monitor and update containers.
-    container_name: watchtower  # Give the Watchtower container a name.
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock  # Grant Watchtower access to Docker.
-    command: --interval 600 open-webui  # Set the interval to check for updates every 300 seconds (5 minutes) and watch "open-webui" container only.
     restart: always
 
 
 
+##################### CLOUDFLARED #####################
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    container_name: cloudflared_tunnel
+
+    environment:
+      TUNNEL_TOKEN: ${CLOUDFLARE_TUNNEL_TOKEN}
+
+    restart: always
+
+    # command: tunnel run
+    command: tunnel --loglevel debug run
+    depends_on:
+      - open-webui  # Ensure Cloudflared waits for Open WebUI to be available before starting
 
 
+##################### WATCHTOWER #####################
+  watchtower:
+    image: containrrr/watchtower
+    container_name: watchtower
+
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock  # Grant Watchtower access to Docker.
+
+    environment:
+      - TZ=America/Los_Angeles  # Set the timezone to Pacific Time (PT)
+
+    command:
+      - --cleanup
+      - --schedule
+      - "0 0 1 * * *"   # Run once a month at midnight UTC
+      - open-webui
+
+    restart: always
+    # restart: always
+
+
+
+### VOLUMES ###
 volumes:
   open-webui:
     driver: local  # Persisted volume to ensure data isn't lost.

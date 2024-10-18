@@ -1,4 +1,0 @@
-ingress:
-  - hostname: dev.plebby.xyz
-    service: http://localhost:3000
-  - service: http_status:404
