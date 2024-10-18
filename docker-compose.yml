@@ -3,19 +3,19 @@ services:
 ##################### OPEN WEBUI #####################
   open-webui:
     image: ghcr.io/open-webui/open-webui:main
-    container_name: open-webui-dev
+    container_name: open-webui
     ports:
       - "3000:8080"
     volumes:
       - open-webui:/app/backend/data
 
     environment:
-      GLOBAL_LOG_LEVEL: "DEBUG"
+      # GLOBAL_LOG_LEVEL: "DEBUG"
       WEBUI_NAME: "PlebChat"
       ENABLE_MESSAGE_RATING: "false"
 
-      ENABLE_SIGNUP: "false"
-      ENABLE_LOGIN_FORM: "false"
+      # ENABLE_SIGNUP: "false"
+      # ENABLE_LOGIN_FORM: "false"
 
       # Ollama settings
       # OLLAMA_BASE_URL: "http://localhost:11434"
