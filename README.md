@@ -20,3 +20,6 @@ docker logs watchtower
 https://containrrr.dev/watchtower/arguments/
 
 
+```sh
+mv template.env .env
+```
