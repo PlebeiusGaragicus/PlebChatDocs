@@ -13,17 +13,24 @@ services:
       # GLOBAL_LOG_LEVEL: "DEBUG"
       WEBUI_NAME: "PlebChat"
       ENABLE_MESSAGE_RATING: "false"
+      ENABLE_COMMUNITY_SHARING: "true"
 
-      # ENABLE_SIGNUP: "false"
-      # ENABLE_LOGIN_FORM: "false"
+      ENABLE_SIGNUP: "false"
+      ENABLE_LOGIN_FORM: "false"
+      DEFAULT_USER_ROLE: "user"
 
-      # Ollama settings
-      # OLLAMA_BASE_URL: "http://localhost:11434"
+      # DEFAULT_MODELS: ""
+
+      # STATIC_DIR: "./static_openwebui"
+      # /app/backend/static_openwebui
+
       OLLAMA_BASE_URL: "http://host.docker.internal:11434"
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
 
 
       # Limit access to localhost to force traffic via Cloudflare
-      HOST: "127.0.0.1" # Uncomment to force traffic via Cloudflare and prevent local access
+      # TODO uncommenting the below breaks things!
+      # HOST: "127.0.0.1" # Uncomment to force traffic via Cloudflare and prevent local access
 
 
       # Trust Cloudflare headers for authentication
@@ -35,6 +42,8 @@ services:
       # WEBUI_SESSION_COOKIE_SAME_SITE: "lax"  # Ensures that cookies are securely passed.
       # ENABLE_RAG_WEB_LOADER_SSL_VERIFICATION: "true"  # Make sure web certificates are validated.
 
+
+      TASK_MODEL: "phi3:3.8b" # not sure that this actually works
       TITLE_GENERATION_PROMPT_TEMPLATE: |
         User query:
         {{prompt:middletruncate:6000}}
