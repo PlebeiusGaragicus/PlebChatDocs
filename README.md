@@ -1,7 +1,7 @@
 ```sh
 # DEVELOPMENT
 # docker-compose up -f docker-compose-dev.yml --env-file .env
-docker compose -f docker-compose-dev.yml --env-file .env up
+docker compose -f docker-compose-dev.yml --env-file .env up -d
 
 # PRODUCTION
 # docker-compose up -f docker-compose.yml --env-file .env
