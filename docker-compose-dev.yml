@@ -12,7 +12,7 @@ services:
 
     environment:
       GLOBAL_LOG_LEVEL: "DEBUG"
-      WEBUI_NAME: "PlebChat"
+      WEBUI_NAME: "PlebDev"
       ENABLE_MESSAGE_RATING: "false"
       ENABLE_COMMUNITY_SHARING: "true"
       # STATIC_DIR: "/Users/micah/Downloads/PLEBCHAT-PRODUCTION/volumes/openwebui_static"
