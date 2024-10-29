@@ -8,7 +8,7 @@ services:
       - "3000:8080"
     volumes:
       - ${BACKEND_DATA_DIR}:/app/backend/data
-      - ${OPENWEBUI_STATIC_DIR}:/app/backend/open_webui/static
+      # - ${OPENWEBUI_STATIC_DIR}:/app/backend/open_webui/static
 
     environment:
       GLOBAL_LOG_LEVEL: "DEBUG"
@@ -122,20 +122,20 @@ services:
 
 
 ##################### WATCHTOWER #####################
-  watchtower:
-    image: containrrr/watchtower
-    container_name: watchtower
+  # watchtower:
+  #   image: containrrr/watchtower
+  #   container_name: watchtower
 
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock  # Grant Watchtower access to Docker.
+  #   volumes:
+  #     - /var/run/docker.sock:/var/run/docker.sock  # Grant Watchtower access to Docker.
 
-    environment:
-      - TZ=America/Los_Angeles  # Set the timezone to Pacific Time (PT)
+  #   environment:
+  #     - TZ=America/Los_Angeles  # Set the timezone to Pacific Time (PT)
 
-    command:
-      - --cleanup
-      - --schedule
-      - "0 0 1 * * *"   # Run once a month at midnight UTC
-      - open-webui
+  #   command:
+  #     - --cleanup
+  #     - --schedule
+  #     - "0 0 1 * * *"   # Run once a month at midnight UTC
+  #     - open-webui
 
-    restart: always
+  #   restart: always
