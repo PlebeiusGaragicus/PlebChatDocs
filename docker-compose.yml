@@ -8,7 +8,9 @@ services:
       - "3000:8080"
     volumes:
       - ${BACKEND_DATA_DIR}:/app/backend/data
-      - ${OPENWEBUI_STATIC_DIR}:/app/backend/open_webui/static
+
+      # DOES NOT WORK YET... missing /app/backend/open_webui/static/assets/pdf-style.css
+      # - ${OPENWEBUI_STATIC_DIR}:/app/backend/open_webui/static
 
     environment:
       # GLOBAL_LOG_LEVEL: "DEBUG"
