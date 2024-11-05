@@ -7,7 +7,7 @@
 
 ```sh
 # setup .env vars first
-cp template.env .env
+cp .env.example .env
 
 mkdir ./volumes/backend_data
 mkdir ./volumes/pipelines_dir
