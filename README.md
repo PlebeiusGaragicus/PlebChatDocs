@@ -3,6 +3,27 @@
 ![PlebChat avatar](./static/plebchat.png)
 
 
+# SearXNG
+
+https://github.com/searxng/searxng-docker
+
+help: https://app.element.io/#/room/#searxng:matrix.org
+
+https://docs.openwebui.com/features/web_search
+
+
+```sh
+cd SearXNG
+git clone https://github.com/searxng/searxng-docker.git
+cd searxng-docker
+
+```
+
+
+---
+
+# OLD STUFF
+
 ## initialize
 
 ```sh

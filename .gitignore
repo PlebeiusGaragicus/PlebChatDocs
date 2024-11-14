@@ -1,5 +1,7 @@
 .DS_Store
-.env
+*.env
 volumes/*
 
 TTS/openedai-speech/
+
+searxng/uwsgi.ini

@@ -4,10 +4,12 @@ services:
   open-webui:
     image: ghcr.io/open-webui/open-webui:main
     container_name: open-webui
+
     ports:
       - "3000:8080"
+
     volumes:
-      - ${BACKEND_DATA_DIR}:/app/backend/data
+      - ${BACKEND_DATA_DIR}:/app/backend/data 
 
       # DOES NOT WORK YET... missing /app/backend/open_webui/static/assets/pdf-style.css
       # - ${OPENWEBUI_STATIC_DIR}:/app/backend/open_webui/static
@@ -17,6 +19,7 @@ services:
       WEBUI_NAME: "PlebChat"
       ENABLE_MESSAGE_RATING: "false"
       ENABLE_COMMUNITY_SHARING: "true"
+      # STATIC_DIR: "/Users/micah/Downloads/PLEBCHAT-PRODUCTION/volumes/openwebui_static"
 
       # ENABLE_SIGNUP: "false" # This will disable the creation of new user accounts - we don't want this
       # ENABLE_LOGIN_FORM: "false" # too many redirects? Unsure if this is related.
@@ -73,8 +76,21 @@ services:
         Artificial Intelligence in Healthcare
         Video Game Development Insights
 
+
+      ### SEARXNG ENV SETTINGS ###
+      ENABLE_RAG_WEB_SEARCH: True
+      RAG_WEB_SEARCH_ENGINE: "searxng"
+      RAG_WEB_SEARCH_RESULT_COUNT: 3
+      RAG_WEB_SEARCH_CONCURRENT_REQUESTS: 10
+      SEARXNG_QUERY_URL: "http://localhost:8080/search?q=<query>"
+
+
+
     extra_hosts:
       - "host.docker.internal:host-gateway"  # Allow Open WebUI to reach the host machine.
+
+    networks:
+      - plebchat_shared
 
     restart: always
 
@@ -93,8 +109,12 @@ services:
     volumes:
       - ${PIPELINES_DIR}:/app/pipelines  # Bind mount the local directory
 
+    networks:
+      - plebchat_shared
+
     depends_on:
       - open-webui
+
     restart: always
 
 ################# PIPELINES BUILT FROM Dockerfile ##############
@@ -106,37 +126,48 @@ services:
   #     - "9099:9099" # Map port 9099 from the container to your host
 
 
-##################### CLOUDFLARED #####################
-  cloudflared:
-    image: cloudflare/cloudflared:latest
-    container_name: cloudflared_tunnel
+# ##################### CLOUDFLARED #####################
+#   cloudflared:
+#     image: cloudflare/cloudflared:latest
+#     container_name: cloudflared_tunnel
 
-    environment:
-      TUNNEL_TOKEN: ${CLOUDFLARE_TUNNEL_TOKEN}
+#     environment:
+#       TUNNEL_TOKEN: ${CLOUDFLARE_TUNNEL_TOKEN}
 
-    restart: always
+#     restart: always
 
-    command: tunnel run
-    # command: tunnel --loglevel debug run
-    depends_on:
-      - open-webui  # Ensure Cloudflared waits for Open WebUI to be available before starting
+#     command: tunnel run
+#     # command: tunnel --loglevel debug run
+#     depends_on:
+#       - open-webui  # Ensure Cloudflared waits for Open WebUI to be available before starting
 
 
-##################### WATCHTOWER #####################
-  watchtower:
-    image: containrrr/watchtower
-    container_name: watchtower
+# ##################### WATCHTOWER #####################
+#   watchtower:
+#     image: containrrr/watchtower
+#     container_name: watchtower
 
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock  # Grant Watchtower access to Docker.
+#     volumes:
+#       - /var/run/docker.sock:/var/run/docker.sock  # Grant Watchtower access to Docker.
 
-    environment:
-      - TZ=America/Los_Angeles  # Set the timezone to Pacific Time (PT)
+#     environment:
+#       - TZ=America/Los_Angeles  # Set the timezone to Pacific Time (PT)
 
-    command:
-      - --cleanup
-      - --schedule
-      - "0 0 1 * * *"   # Run once a month at midnight UTC
-      - open-webui
+#     command:
+#       - --cleanup
+#       - --schedule
+#       - "0 0 1 * * *"   # Run once a month at midnight UTC
+#       - open-webui
 
-    restart: always
+#     restart: always
+
+
+##################### NETWORKS #####################
+  # networks:
+  #   plebchat:
+  #     # driver: bridge
+
+
+networks:
+  plebchat_shared:
+    external: true

@@ -1,6 +1,11 @@
+# reference
+
 https://github.com/matatonic/openedai-speech
 
 https://docs.openwebui.com/tutorials/integrations/openedai-speech-integration/
+
+
+# setup
 
 ```sh
 cd TTS
@@ -18,8 +23,6 @@ docker compose -f docker-compose.min.yml up -d
 # pass: anythingyouwant
 
 ```
-
-
 
 
 # example usage

@@ -1,0 +1,50 @@
+services:
+
+##################### CLOUDFLARED #####################
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    container_name: cloudflared_tunnel
+
+    # volumes:
+      # - ./cloudflared:/etc/cloudflared          # Mount local config directory into the container
+
+    environment:
+      TUNNEL_TOKEN: ${CLOUDFLARE_TUNNEL_TOKEN}
+
+    # command: tunnel run
+    command: tunnel --loglevel debug run
+    # depends_on:
+    #   - open-webui  # Ensure Cloudflared waits for Open WebUI to be available before starting
+
+    networks:
+      - plebchat_shared
+
+    restart: always
+
+##################### WATCHTOWER #####################
+  watchtower:
+    image: containrrr/watchtower
+    container_name: watchtower
+
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock  # Grant Watchtower access to Docker.
+
+    environment:
+      - TZ=America/Los_Angeles  # Set the timezone to Pacific Time (PT)
+
+    command:
+      - --cleanup
+      - --schedule
+      - "0 0 1 * * *"   # Run once a month at midnight UTC
+      - open-webui
+      - searxng
+
+    networks:
+      - plebchat_shared
+
+    restart: always
+
+
+networks:
+  plebchat_shared:
+    external: true
