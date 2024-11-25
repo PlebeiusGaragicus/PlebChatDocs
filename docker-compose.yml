@@ -41,9 +41,9 @@ services:
 
 
       # Trust Cloudflare headers for authentication
-      WEBUI_AUTH_TRUSTED_EMAIL_HEADER: "Cf-Access-Authenticated-User-Email"  # Entrust the email from Cloudflare
+      # WEBUI_AUTH_TRUSTED_EMAIL_HEADER: "Cf-Access-Authenticated-User-Email"  # Entrust the email from Cloudflare
       # Optionally, use this header to set a name for new users created automatically
-      WEBUI_AUTH_TRUSTED_NAME_HEADER: "Cf-Access-Authenticated-User-Name"
+      # WEBUI_AUTH_TRUSTED_NAME_HEADER: "Cf-Access-Authenticated-User-Name"
 
       # WEBUI_SESSION_COOKIE_SECURE: "true"  # Forces cookies to be sent over secure HTTPS.
       # WEBUI_SESSION_COOKIE_SAME_SITE: "lax"  # Ensures that cookies are securely passed.
@@ -138,5 +138,6 @@ services:
       - --schedule
       - "0 0 1 * * *"   # Run once a month at midnight UTC
       - open-webui
+      - cloudflared
 
     restart: always

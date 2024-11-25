@@ -3,3 +3,5 @@
 volumes/*
 
 TTS/openedai-speech/
+
+*.env
