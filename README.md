@@ -1,5 +1,28 @@
 # PlebChat
 
+### Create the shared Docker network
+
+```sh
+docker network create openwebui_net
+
+```
+
+
+### Start Open WebUI
+```sh
+sh up.sh
+
+```
+
+
+---
+
+---
+
+
+---
+
+
 ![PlebChat avatar](./static/plebchat.png)
 
 

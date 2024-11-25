@@ -3,5 +3,6 @@
 volumes/*
 
 TTS/openedai-speech/
+TTS/openai-edge-tts/
 
 searxng/uwsgi.ini

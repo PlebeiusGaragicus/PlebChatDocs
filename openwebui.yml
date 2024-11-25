@@ -1,15 +1,53 @@
+volumes:
+  tailscale: {}
+
 services:
+
+##################### TAILSCALE #####################
+
+  ts-openwebui:
+    image: tailscale/tailscale:latest
+
+    container_name: ts-openwebui
+    hostname: openwebui
+    environment:
+      - TS_AUTHKEY=${OAUTH_CLIENT}?ephemeral=false
+      - "TS_EXTRA_ARGS=--advertise-tags=tag:container --reset"
+      - TS_SERVE_CONFIG=/config/openwebui.json
+      - TS_STATE_DIR=/var/lib/tailscale
+      - TS_USERSPACE=false
+
+      # - TS_AUTH_ONCE=true
+
+
+    volumes:
+      # - ${PWD}/volumes/openwebui/tailscale/state:/var/lib/tailscale
+      # - tailscale:/var/lib/tailscale
+      # - ${PWD}/volumes/openwebui/tailscale/config:/config
+      # - ${PWD}/configs/openwebui:/config
+      - ${PWD}/volumes/state:/var/lib/tailscale
+      - ${PWD}/config:/config
+      - /dev/net/tun:/dev/net/tun
+
+    cap_add:
+      - net_admin
+      - sys_module
+
+    restart: unless-stopped
+
+
 
 ##################### OPEN WEBUI #####################
   open-webui:
     image: ghcr.io/open-webui/open-webui:main
     container_name: open-webui
+    network_mode: service:ts-openwebui
 
-    ports:
-      - "3000:8080"
+    # ports:
+    #   - "3000:8080"
 
     volumes:
-      - ${BACKEND_DATA_DIR}:/app/backend/data 
+      - ${PWD}/volumes/openwebui_backend_data:/app/backend/data
 
       # DOES NOT WORK YET... missing /app/backend/open_webui/static/assets/pdf-style.css
       # - ${OPENWEBUI_STATIC_DIR}:/app/backend/open_webui/static
@@ -23,7 +61,7 @@ services:
 
       # ENABLE_SIGNUP: "false" # This will disable the creation of new user accounts - we don't want this
       # ENABLE_LOGIN_FORM: "false" # too many redirects? Unsure if this is related.
-      DEFAULT_USER_ROLE: "user"
+      DEFAULT_USER_ROLE: "admin"
 
       # DEFAULT_MODELS: ""
 
@@ -32,7 +70,9 @@ services:
 
       OLLAMA_BASE_URL: "http://host.docker.internal:11434"
 
-      OPENAI_API_BASE_URLS: "https://api.openai.com/v1;http://host.docker.internal:9099"
+      # OPENAI_API_BASE_URLS: "https://api.openai.com/v1;http://host.docker.internal:9099"
+      # OPENAI_API_BASE_URLS: "https://api.openai.com/v1;http://pipelines:9099"
+      OPENAI_API_BASE_URLS: "https://api.openai.com/v1;http://localhost:9099"
       OPENAI_API_KEYS: "${OPENAI_API_KEY};${PIPELINES_API_KEY}"
       # OPENAI_API_KEYS: "${OPENAI_API_KEY};whatever" # the pipeline needs the key to UPDATE pipelines, not use them - FYI
 
@@ -43,10 +83,17 @@ services:
       # I don't think we even need this because a JWT is used for authentication and a local connection will be refused.
 
 
-      # Trust Cloudflare headers for authentication
-      WEBUI_AUTH_TRUSTED_EMAIL_HEADER: "Cf-Access-Authenticated-User-Email"  # Entrust the email from Cloudflare
-      # Optionally, use this header to set a name for new users created automatically
-      WEBUI_AUTH_TRUSTED_NAME_HEADER: "Cf-Access-Authenticated-User-Name"
+      HOST: 127.0.0.1
+      WEBUI_AUTH_TRUSTED_EMAIL_HEADER: Tailscale-User-Login
+      WEBUI_AUTH_TRUSTED_NAME_HEADER: Tailscale-User-Name
+
+      AUDIO_TTS_ENGINE: "openai"
+      AUDIO_TTS_ENGINE_API_KEY: "$"
+      # AUDIO_TTS_OPENAI_API_BASE_URL: "http://host.docker.internal:8000/v1"
+      AUDIO_TTS_OPENAI_API_BASE_URL: "http://localhost:5050/v1"
+      AUDIO_TTS_MODEL: "tts-1"
+      AUDIO_TTS_VOICE: "en-US-AnaNeural" # https://tts.travisvn.com
+      AUDIO_TTS_SPLIT_ON: "punctuation"
 
       # WEBUI_SESSION_COOKIE_SECURE: "true"  # Forces cookies to be sent over secure HTTPS.
       # WEBUI_SESSION_COOKIE_SAME_SITE: "lax"  # Ensures that cookies are securely passed.
@@ -77,22 +124,25 @@ services:
         Video Game Development Insights
 
 
+
+
+      #TODO:
       ### SEARXNG ENV SETTINGS ###
-      ENABLE_RAG_WEB_SEARCH: True
-      RAG_WEB_SEARCH_ENGINE: "searxng"
-      RAG_WEB_SEARCH_RESULT_COUNT: 3
-      RAG_WEB_SEARCH_CONCURRENT_REQUESTS: 10
-      SEARXNG_QUERY_URL: "http://localhost:8080/search?q=<query>"
+      # ENABLE_RAG_WEB_SEARCH: True
+      # RAG_WEB_SEARCH_ENGINE: "searxng"
+      # RAG_WEB_SEARCH_RESULT_COUNT: 3
+      # RAG_WEB_SEARCH_CONCURRENT_REQUESTS: 10
+      # SEARXNG_QUERY_URL: "http://localhost:8080/search?q=<query>"
 
 
 
-    extra_hosts:
-      - "host.docker.internal:host-gateway"  # Allow Open WebUI to reach the host machine.
-
-    networks:
-      - plebchat_shared
+    # extra_hosts:
+      # - "host.docker.internal:host-gateway"  # Allow Open WebUI to reach the host machine.
+      # - "localhost:host-gateway"
 
     restart: always
+
+
 
 
 
@@ -100,46 +150,44 @@ services:
   pipelines:
     image: ghcr.io/open-webui/pipelines:main
     container_name: pipelines
-    ports:
-      - "9099:9099"
+    network_mode: service:ts-openwebui
+
+    # ports:
+    #   - "9099:9099"
     environment:
-      add-host: host.docker.internal:host-gateway
+      # add-host: host.docker.internal:host-gateway
+      add-host: localhost:host-gateway
       PIPELINES_API_KEY: ${PIPELINES_API_KEY} # the pipelines will accept any API_KEY apparently... havn't gotten a reply yet
 
     volumes:
-      - ${PIPELINES_DIR}:/app/pipelines  # Bind mount the local directory
+      - ${PWD}/volumes/pipelines:/app/pipelines  # Bind mount the local directory
 
-    networks:
-      - plebchat_shared
+    # networks:
+    #   - openwebui_net
 
     depends_on:
       - open-webui
 
     restart: always
 
-################# PIPELINES BUILT FROM Dockerfile ##############
-  # pipelines-built:
-  #   build:
-  #     context: ../pipelines # Path to directory containing Dockerfile
 
-  #   ports: 
-  #     - "9099:9099" # Map port 9099 from the container to your host
+#docker run -d -p 5050:5050 travisvn/openai-edge-tts:latest
 
+  openai-edge-tts:
+    image: openai-edge-tts
+    container_name: openai-edge-tts
+    network_mode: service:ts-openwebui
 
-# ##################### CLOUDFLARED #####################
-#   cloudflared:
-#     image: cloudflare/cloudflared:latest
-#     container_name: cloudflared_tunnel
+    # ports:
+    #   - "5050:5050"
 
-#     environment:
-#       TUNNEL_TOKEN: ${CLOUDFLARE_TUNNEL_TOKEN}
+    # environment:
+    #   OPENAI_API_KEY: ${OPENAI_API_KEY}
+    #   OPENAI_API_BASE_URL: "http://host.docker.internal:8000/v1"
 
-#     restart: always
+    # networks:
+    #   - openwebui_net
 
-#     command: tunnel run
-#     # command: tunnel --loglevel debug run
-#     depends_on:
-#       - open-webui  # Ensure Cloudflared waits for Open WebUI to be available before starting
 
 
 # ##################### WATCHTOWER #####################
@@ -158,16 +206,18 @@ services:
 #       - --schedule
 #       - "0 0 1 * * *"   # Run once a month at midnight UTC
 #       - open-webui
+#       # - searxng # docs say it's not recommended?
+
+#     # networks:
+#     #   - openwebui_net
 
 #     restart: always
 
 
+
+
+
 ##################### NETWORKS #####################
-  # networks:
-  #   plebchat:
-  #     # driver: bridge
-
-
-networks:
-  plebchat_shared:
-    external: true
+# networks:
+#   openwebui_net:
+#     external: true

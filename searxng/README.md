@@ -1,0 +1,2 @@
+# SearXNG setup
+
