@@ -4,53 +4,47 @@ services:
   open-webui:
     image: ghcr.io/open-webui/open-webui:main
     container_name: open-webui
-    ports:
-      - "3000:8080"
+
+    # ports:
+    #   - "3000:8080"
+
     volumes:
-      - ${BACKEND_DATA_DIR}:/app/backend/data
+      - ${PWD}/volumes/openwebui_backend_data:/app/backend/data
 
       # DOES NOT WORK YET... missing /app/backend/open_webui/static/assets/pdf-style.css
       # - ${OPENWEBUI_STATIC_DIR}:/app/backend/open_webui/static
 
     environment:
-      # GLOBAL_LOG_LEVEL: "DEBUG"
+      GLOBAL_LOG_LEVEL: "DEBUG" # TODO: remove in prod
       WEBUI_NAME: "PlebChat"
       ENABLE_MESSAGE_RATING: "false"
       ENABLE_COMMUNITY_SHARING: "true"
 
-      # ENABLE_SIGNUP: "false" # This will disable the creation of new user accounts - we don't want this
-      # ENABLE_LOGIN_FORM: "false" # too many redirects? Unsure if this is related.
-      DEFAULT_USER_ROLE: "user"
+      # ENABLE_SIGNUP: "false"
+      # ENABLE_LOGIN_FORM: "false"
+      # DEFAULT_USER_ROLE: "pending"
 
-      # DEFAULT_MODELS: ""
 
       # STATIC_DIR: "./static_openwebui"
       # /app/backend/static_openwebui
 
       OLLAMA_BASE_URL: "http://host.docker.internal:11434"
 
-      OPENAI_API_BASE_URLS: "https://api.openai.com/v1;http://host.docker.internal:9099"
+      # OPENAI_API_BASE_URLS: "https://api.openai.com/v1;http://host.docker.internal:9099"
+      OPENAI_API_BASE_URLS: "https://api.openai.com/v1;http://localhost:9099"
       OPENAI_API_KEYS: "${OPENAI_API_KEY};${PIPELINES_API_KEY}"
-      # OPENAI_API_KEYS: "${OPENAI_API_KEY};whatever" # the pipeline needs the key to UPDATE pipelines, not use them - FYI
 
 
-      # Limit access to localhost to force traffic via Cloudflare
-      # TODO uncommenting the below breaks things!
       # HOST: "127.0.0.1" # Uncomment to force traffic via Cloudflare and prevent local access
-      # I don't think we even need this because a JWT is used for authentication and a local connection will be refused.
-
-
-      # Trust Cloudflare headers for authentication
-      # WEBUI_AUTH_TRUSTED_EMAIL_HEADER: "Cf-Access-Authenticated-User-Email"  # Entrust the email from Cloudflare
-      # Optionally, use this header to set a name for new users created automatically
-      # WEBUI_AUTH_TRUSTED_NAME_HEADER: "Cf-Access-Authenticated-User-Name"
-
       # WEBUI_SESSION_COOKIE_SECURE: "true"  # Forces cookies to be sent over secure HTTPS.
       # WEBUI_SESSION_COOKIE_SAME_SITE: "lax"  # Ensures that cookies are securely passed.
       # ENABLE_RAG_WEB_LOADER_SSL_VERIFICATION: "true"  # Make sure web certificates are validated.
 
+      # DEFAULT_MODELS: ""
 
-      # TASK_MODEL: "phi3:3.8b" # not sure that this actually works
+
+      #TODO: Double check that this works... also, what if they don't have the model?
+      TASK_MODEL: "phi3:3.8b"
       TITLE_GENERATION_PROMPT_TEMPLATE: |
         User query:
         {{prompt:middletruncate:6000}}
@@ -73,6 +67,17 @@ services:
         Artificial Intelligence in Healthcare
         Video Game Development Insights
 
+
+
+      AUDIO_TTS_ENGINE: "openai"
+      AUDIO_TTS_ENGINE_API_KEY: "$"
+      # AUDIO_TTS_OPENAI_API_BASE_URL: "http://host.docker.internal:8000/v1"
+      AUDIO_TTS_OPENAI_API_BASE_URL: "http://localhost:5050/v1"
+      AUDIO_TTS_MODEL: "tts-1"
+      AUDIO_TTS_VOICE: "en-US-AnaNeural" # https://tts.travisvn.com
+      AUDIO_TTS_SPLIT_ON: "punctuation"
+
+
     extra_hosts:
       - "host.docker.internal:host-gateway"  # Allow Open WebUI to reach the host machine.
 
@@ -84,18 +89,23 @@ services:
   pipelines:
     image: ghcr.io/open-webui/pipelines:main
     container_name: pipelines
-    ports:
-      - "9099:9099"
+
+    network_mode: service:open-webui
+    # ports:
+    #   - "9099:9099"
+
     environment:
       add-host: host.docker.internal:host-gateway
-      PIPELINES_API_KEY: ${PIPELINES_API_KEY} # the pipelines will accept any API_KEY apparently... havn't gotten a reply yet
+      PIPELINES_API_KEY: ${PIPELINES_API_KEY}
 
     volumes:
-      - ${PIPELINES_DIR}:/app/pipelines  # Bind mount the local directory
+      - ${PWD}/volumes/pipelines:/app/pipelines
 
     depends_on:
       - open-webui
+
     restart: always
+
 
 ################# PIPELINES BUILT FROM Dockerfile ##############
   # pipelines-built:
@@ -106,20 +116,33 @@ services:
   #     - "9099:9099" # Map port 9099 from the container to your host
 
 
+################### OPENAI EDGE TTS #####################
+  openai-edge-tts:
+    image: openai-edge-tts
+    container_name: openai-edge-tts
+
+    network_mode: service:open-webui
+
+    restart: always
+
+
 ##################### CLOUDFLARED #####################
   cloudflared:
     image: cloudflare/cloudflared:latest
     container_name: cloudflared_tunnel
 
+    network_mode: service:open-webui
+
     environment:
       TUNNEL_TOKEN: ${CLOUDFLARE_TUNNEL_TOKEN}
 
-    restart: always
-
     command: tunnel run
     # command: tunnel --loglevel debug run
+
     depends_on:
       - open-webui  # Ensure Cloudflared waits for Open WebUI to be available before starting
+
+    restart: always
 
 
 ##################### WATCHTOWER #####################
@@ -131,12 +154,12 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock  # Grant Watchtower access to Docker.
 
     environment:
-      - TZ=America/Los_Angeles  # Set the timezone to Pacific Time (PT)
+      TZ: America/Los_Angeles  # Set the timezone to Pacific Time (PT)
 
     command:
       - --cleanup
       - --schedule
-      - "0 0 1 * * *"   # Run once a month at midnight UTC
+      - "0 0 1 * * *"   # Run every day at 1 AM
       - open-webui
       - cloudflared
 
